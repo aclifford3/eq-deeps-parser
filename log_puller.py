@@ -2,8 +2,7 @@ import csv
 import logging
 
 """
-This class parses real time logs to configured EQ logging file, converts those logs to combat log objects and then adds
-those objects to the current fight.  This class maintains a list of the last N fights.
+This class pulls logs from a log file.  It is given a file path and starts reading from the end of the log file.
 """
 
 

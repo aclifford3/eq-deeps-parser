@@ -1,7 +1,13 @@
+"""
+This class uses a log puller to read new combat logs every second.  It keeps track of character performances for each
+fight.
+"""
+
 import time
 import os
 import logging
 import re
+import visualize
 from log_puller import LogPuller
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%d-%b-%y %H:%M:%S',
@@ -15,8 +21,10 @@ class Fight:
 
 
 class FightPerformance:
-    def __init__(self):
+    def __init__(self, actor):
+        self.actor = actor
         self.damage_dealt = 0
+        self.healing_dealt = 0
 
 
 class CombatEvent:
@@ -63,15 +71,16 @@ def get_combat_event(combat_log):
     return CombatEvent(actor, target, amount, 0)
 
 
-def update_unit_fight_performance(unit_fight_performances, combat_log):
+def update_fight_performance(unit_fight_performances, combat_log):
     try:
         combat_event = get_combat_event(combat_log)
         logging.debug("Created combat event for actor %s", combat_event.actor)
         if combat_event.actor in unit_fight_performances.keys():
             fight_performance = unit_fight_performances[combat_event.actor]
         else:
-            fight_performance = FightPerformance()
+            fight_performance = FightPerformance(combat_event.actor)
         fight_performance.damage_dealt += combat_event.damage_dealt
+        fight_performance.healing_dealt += combat_event.healing_dealt
         unit_fight_performances[combat_event.actor] = fight_performance
     except Exception as e:
         logging.error('Failed to get combat event for log:  \n %s', combat_log, e)
@@ -92,7 +101,7 @@ def process_combat_logs(logs, fights):
         elif is_fight_complete(combat_log):
             current_fight.is_complete = True
         else:
-            update_unit_fight_performance(current_fight.actor_fight_performances, combat_log)
+            update_fight_performance(current_fight.actor_fight_performances, combat_log)
     fights.append(current_fight)
 
 
@@ -106,14 +115,16 @@ if __name__ == '__main__':
     logging.info("Starting parser.")
     fights = []
     log_puller = LogPuller(path)
-    max_fights_to_retain = 5
+    max_fights_to_retain = 1
     while True:
         new_logs = log_puller.pull_new_logs()
         combat_logs = filter_combat_logs(new_logs)
         process_combat_logs(combat_logs, fights)
-        while len(fights) > 5:
+        while len(fights) > max_fights_to_retain:
             fights.pop(0)
         for fight in fights:
             logging.debug('Found %s total fights', len(fights))
             logging.debug('Found fight %s', fight.actor_fight_performances)
-        time.sleep(1)
+            visualize.plot(fights[0])
+        time.sleep(4)
+
