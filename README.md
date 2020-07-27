@@ -1,3 +1,5 @@
+![Python application](https://github.com/aclifford3/eq-deeps-parser/workflows/Python%20application/badge.svg)
+
 # eq-deeps-parser
 Program that parses EverQuest combat logs and uses them to visualize character damage and healing amounts for the last
 fight.
