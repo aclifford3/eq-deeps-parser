@@ -1,19 +1,23 @@
-import pandas as pd
-import matplotlib.pyplot as plt
+'''Creates visualizations of fight reports'''
+
 import logging
 
-def plot(fight):
-    if len(fight.actor_fight_performances.keys()) > 0:
+import matplotlib.pyplot as plt
+import pandas as pd
+
+def plot(fight_report):
+    '''Plots fight report on a horizontal bar graph'''
+    if len(fight_report.contribution_aggregates.keys()) > 0:
         data = []
         index = []
-        for actor in fight.actor_fight_performances.keys():
-            performance = fight.actor_fight_performances[actor]
+        for participant in fight_report.contribution_aggregates.keys():
+            performance = fight_report.contribution_aggregates[participant]
             data.append([performance.damage_dealt, performance.healing_dealt])
-            index.append(actor)
-        df = pd.DataFrame(data, columns=['Damage', 'Healing'], index=index)
-        df = df.sort_values(by=['Damage'])
-        ax = df.plot.barh()
-        ax.set_xlabel('')
+            index.append(participant)
+        data_frame = pd.DataFrame(data, columns=['Damage', 'Healing'], index=index)
+        data_frame = data_frame.sort_values(by=['Damage'])
+        axes = data_frame.plot.barh()
+        axes.set_xlabel('')
         plt.show()
     else:
         logging.debug('Nothing to plot')
