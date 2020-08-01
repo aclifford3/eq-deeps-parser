@@ -9,6 +9,7 @@ import logging
 import re
 import visualize
 from log_puller import LogPuller
+import configparser
 
 logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', datefmt='%d-%b-%y %H:%M:%S',
                     level=logging.INFO)
@@ -54,7 +55,7 @@ def get_combat_event(combat_log):
     message = combat_log.split('] ')[1]
     # Locate the attack verb to use in figuring out the actor and target
     verb_match = re.search('(was )?(bite[s]?|bash[es]?|strike[s]?|slash[es]?|punch[es]?|hit[s]?|pierce[s]?'
-                           '|crush[es]?|gore[s]?|kick[s]?|slap[s]?|claw[s]?|maul[s]?|shoot[s]?)',
+                           '|crush[es]?|gore[s]?|kick[s]?|slap[s]?|claw[s]?|maul[s]?|shoot[s]?|sting[s]?)',
                            message)
     if not verb_match:
         verb_match = re.search('((has|have) healed)', message)
@@ -109,8 +110,13 @@ def filter_combat_logs(logs):
     return list(filter(lambda x: is_combat_log(x), logs))
 
 
+def get_log_file_path():
+    config = configparser.ConfigParser()
+    config.read('./config.ini')
+    return config['DEFAULT']['COMBAT_LOG_PATH']
+
 if __name__ == '__main__':
-    path = './eq-sample.log'
+    path = get_log_file_path()
     log_file_size = os.path.getsize(path)
     logging.info("Starting parser.")
     fights = []

@@ -19,8 +19,7 @@ def get_starting_line(path):
 class LogPuller:
     def __init__(self, path):
         self.path = path
-        # self.last_processed_log_line = get_starting_line(path)
-        self.last_processed_log_line = 111
+        self.last_processed_log_line = get_starting_line(path)
 
     """
     Returns the log file line on which to start parsing.  We only want to process new events that come in, so we will
