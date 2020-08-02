@@ -52,31 +52,56 @@ def is_fight_complete(combat_log):
     '''Returns true if the fight is completed'''
     return 'You are no longer in combat.' in combat_log
 
+def is_damage_shield_message(combat_log):
+    '''We treat damage shield as a separate participant, if log is for damage shield damage
+    returns True
+    '''
+    return 'was hit by non-melee for' in combat_log
+
+def get_participant(log_message, verb_start_pos):
+    '''Gets the participant that is performing the combat action'''
+    return log_message[0:verb_start_pos - 1]
+
+def get_damage_shield_contribution(log_message, verb_start_pos, amount):
+    '''Get contribution of damage shield'''
+    return Contribution('Damage Shield', log_message[0:verb_start_pos-1], amount, 0)
+
+def get_healing_contribution(log_message, amount):
+    '''Get participant healing contribution'''
+    for_pos = log_message.find(' for ')
+    verb_match = re.search('((has|have) healed)', log_message)
+    participant = get_participant(log_message, verb_match.start())
+    target = log_message[verb_match.end() + 1:for_pos]
+    return Contribution(participant, target, 0, amount)
+
+def get_damage_contribution(log_message, amount, verb_match):
+    '''Get participant damage contribution'''
+    for_pos = log_message.find(' for ')
+    participant = get_participant(log_message, verb_match.start())
+    target = log_message[verb_match.end() + 1:for_pos]
+    return Contribution(participant, target, amount, 0)
+
+def is_healing_log(log_message):
+    '''Returns true if log message is a healing event'''
+    verb_match = re.search('((has|have) healed)', log_message)
+    return verb_match is not None
+
 
 def get_contribution(combat_log):
     '''Converts raw combat log into a more usable Contribution object'''
-    is_healing_event = False
     # Split timestamp from the rest of the log message
-    message = combat_log.split('] ')[1]
-    # Locate the attack verb to use in figuring out the actor and target
+    log_message = combat_log.split('] ')[1]
+    amount = int(((log_message.split(' for ')[1]).split(' '))[0])
+    # Locate the attack verb to use in figuring out the participant and target
     verb_match = re.search('(was )?(bite[s]?|bash[es]?|strike[s]?|slash[es]?|punch[es]?|hit[s]?'
                            '|pierce[s]?|crush[es]?|gore[s]?|kick[s]?|slap[s]?|claw[s]?|maul[s]?'
                            '|shoot[s]?|sting[s]?)',
-                           message)
-    if not verb_match:
-        verb_match = re.search('((has|have) healed)', message)
-        is_healing_event = True
-
-    actor = message[0:verb_match.start() - 1]
-    for_pos = message.find(' for ')
-
-    target = message[verb_match.end() + 1:for_pos]
-
-    amount = int(((message.split(' for ')[1]).split(' '))[0])
-    if is_healing_event:
-        return Contribution(actor, target, 0, amount)
-    return Contribution(actor, target, amount, 0)
-
+                           log_message)
+    if is_damage_shield_message(log_message):
+        return get_damage_shield_contribution(log_message, verb_match.start(), amount)
+    if is_healing_log(log_message):
+        return get_healing_contribution(log_message, amount) 
+    return get_damage_contribution(log_message, amount, verb_match)
 
 def update_fight_contribution(contribution_aggregates, combat_log):
     '''Updates a participant's fight contribution based on combat log'''
